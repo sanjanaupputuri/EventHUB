@@ -13,3 +13,17 @@ local.properties
 # APKs
 *.apk
 *.aab
+
+# Kotlin
+.kotlin/
+
+# Firebase
+google-services.json
+
+# Keystore files
+*.jks
+*.keystore
+
+# OS generated files
+.DS_Store
+Thumbs.db
