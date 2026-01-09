@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "com.eventhub.app-debug-63:/xml_data_extraction_rules.xml.flat",
+        "source": "com.eventhub.app-main-65:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.eventhub.app-debug-63:/xml_backup_rules.xml.flat",
+        "source": "com.eventhub.app-main-65:/xml/backup_rules.xml"
+    }
+]
