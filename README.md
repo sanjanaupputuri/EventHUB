@@ -127,19 +127,23 @@ EventHUB/
 - Project Duration: 3 Weeks
 - Type: Academic Mini / Capstone Project
 
-  Team Members
+  ## 👩‍💻 Development Team
 
-- Member 1 – Developer
-  Name: Balagam Risha Raj
-  GitHub: https://github.com/balagamrisha
+- **Team Size:** 3  
+- **Project Duration:** 3 Weeks  
+- **Project Type:** Academic Mini / Capstone Project  
 
-- Member 2 – Developer
-  Name: Sanjana Upputuri
-  GitHub: https://github.com/sanjanaupputuri
+### 👥 Team Members
 
-- Member 3 – Developer
-  Name: Sameeksha
-  GitHub: https://github.com/SameekshaB656
+- **Member 1:** Balagam Risha Raj  
+  - GitHub: https://github.com/balagamrisha  
+
+- **Member 2:** Sanjana Upputuri  
+  - GitHub: https://github.com/sanjanaupputuri  
+
+- **Member 3:** Sameeksha  
+  - GitHub: https://github.com/SameekshaB656  
+
 
 ---
 
