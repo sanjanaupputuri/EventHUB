@@ -120,14 +120,10 @@ EventHUB/
 3. Sync Gradle files
 
 4. Run the app on an emulator or physical device
+   
 ---
-### 🧑‍💻Development Team
 
-- Team Size: 3
-- Project Duration: 3 Weeks
-- Type: Academic Mini / Capstone Project
-
-  ## 👩‍💻 Development Team
+## 👩‍💻 Development Team
 
 - **Team Size:** 3  
 - **Project Duration:** 3 Weeks  
@@ -143,7 +139,6 @@ EventHUB/
 
 - **Member 3:** Sameeksha  
   - GitHub: https://github.com/SameekshaB656  
-
 
 ---
 
