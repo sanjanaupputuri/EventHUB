@@ -172,4 +172,4 @@ All rights reserved to the development team.
 
 ---
 
-** ⭐ EventHUB – Built by students, for students **
+**⭐ EventHUB – Built by students, for students**
