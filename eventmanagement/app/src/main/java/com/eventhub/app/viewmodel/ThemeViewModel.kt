@@ -1,54 +1,35 @@
 package com.eventhub.app.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.eventhub.app.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.content.Context
 
-class ThemeViewModel : ViewModel() {
+class ThemeViewModel(application: Application) : AndroidViewModel(application) {
 
-    // Default theme is LIGHT
-    private val _themeMode = MutableStateFlow(ThemeMode.LIGHT)
+    private val prefs = application.getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+
+    private val _themeMode = MutableStateFlow(loadThemeMode())
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
+
+    private fun loadThemeMode(): ThemeMode {
+        val themeName = prefs.getString("theme_mode", ThemeMode.LIGHT.name)
+        return try {
+            ThemeMode.valueOf(themeName ?: ThemeMode.LIGHT.name)
+        } catch (e: IllegalArgumentException) {
+            ThemeMode.LIGHT
+        }
+    }
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
             _themeMode.value = mode
-            // You can save to DataStore/SharedPreferences here
-            // saveThemePreference(mode)
+            prefs.edit().putString("theme_mode", mode.name).apply()
         }
     }
-
-    fun toggleTheme() {
-        viewModelScope.launch {
-            _themeMode.value = when (_themeMode.value) {
-                ThemeMode.LIGHT -> ThemeMode.DARK
-                ThemeMode.DARK -> ThemeMode.LIGHT
-                ThemeMode.SYSTEM -> ThemeMode.LIGHT
-            }
-        }
-    }
-
-    // Optional: Load saved theme preference
-    /*
-    private fun loadThemePreference() {
-        viewModelScope.launch {
-            // Load from DataStore/SharedPreferences
-            val savedTheme = dataStore.data.map { it[THEME_KEY] ?: ThemeMode.LIGHT.name }
-            savedTheme.collect { themeName ->
-                _themeMode.value = ThemeMode.valueOf(themeName)
-            }
-        }
-    }
-
-    private suspend fun saveThemePreference(mode: ThemeMode) {
-        // Save to DataStore/SharedPreferences
-        dataStore.edit { preferences ->
-            preferences[THEME_KEY] = mode.name
-        }
-    }
-    */
 }

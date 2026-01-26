@@ -19,6 +19,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
+import com.eventhub.app.ui.theme.ThemeMode
+import com.eventhub.app.viewmodel.ThemeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,9 +30,12 @@ fun MainApp(
     registeredEvents: Set<String>,
     onLogout: () -> Unit,
     onRegisterEvent: (String) -> Unit,
-    onUnregisterEvent: (String) -> Unit
+    onUnregisterEvent: (String) -> Unit,
+    themeViewModel: ThemeViewModel // Add this parameter
 ) {
     var selectedTab by remember { mutableStateOf(0) }
+    var showThemeMenu by remember { mutableStateOf(false) }
+    val currentTheme by themeViewModel.themeMode.collectAsState()
 
     Scaffold(
         topBar = {
@@ -43,6 +48,121 @@ fun MainApp(
                     )
                 },
                 actions = {
+                    // Theme Selector Icon
+                    Box {
+                        IconButton(onClick = { showThemeMenu = true }) {
+                            Icon(
+                                imageVector = when (currentTheme) {
+                                    ThemeMode.LIGHT -> Icons.Filled.LightMode
+                                    ThemeMode.DARK -> Icons.Filled.DarkMode
+                                    ThemeMode.SYSTEM -> Icons.Filled.PhoneAndroid
+                                },
+                                contentDescription = "Change Theme",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        // Theme Dropdown Menu
+                        DropdownMenu(
+                            expanded = showThemeMenu,
+                            onDismissRequest = { showThemeMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.LightMode,
+                                            contentDescription = null,
+                                            tint = if (currentTheme == ThemeMode.LIGHT)
+                                                MaterialTheme.colorScheme.primary
+                                            else
+                                                MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text("Light")
+                                        if (currentTheme == ThemeMode.LIGHT) {
+                                            Icon(
+                                                Icons.Filled.Check,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    themeViewModel.setThemeMode(ThemeMode.LIGHT)
+                                    showThemeMenu = false
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.DarkMode,
+                                            contentDescription = null,
+                                            tint = if (currentTheme == ThemeMode.DARK)
+                                                MaterialTheme.colorScheme.primary
+                                            else
+                                                MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text("Dark")
+                                        if (currentTheme == ThemeMode.DARK) {
+                                            Icon(
+                                                Icons.Filled.Check,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    themeViewModel.setThemeMode(ThemeMode.DARK)
+                                    showThemeMenu = false
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.PhoneAndroid,
+                                            contentDescription = null,
+                                            tint = if (currentTheme == ThemeMode.SYSTEM)
+                                                MaterialTheme.colorScheme.primary
+                                            else
+                                                MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text("System Default")
+                                        if (currentTheme == ThemeMode.SYSTEM) {
+                                            Icon(
+                                                Icons.Filled.Check,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    themeViewModel.setThemeMode(ThemeMode.SYSTEM)
+                                    showThemeMenu = false
+                                }
+                            )
+                        }
+                    }
+
+                    // Logout Icon
                     IconButton(onClick = onLogout) {
                         Icon(
                             Icons.Filled.ExitToApp,
@@ -443,7 +563,7 @@ fun ProfileDetailsCard(user: User) {
             )
 
             ProfileInfoRow(Icons.Outlined.Badge, "College ID", user.collegeId)
-            Divider(modifier = Modifier.padding(vertical = 12.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
             ProfileInfoRow(Icons.Outlined.Email, "Email Address", user.email)
         }
     }

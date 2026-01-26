@@ -4,10 +4,14 @@ import androidx.compose.runtime.*
 import com.eventhub.app.data.AppScreen
 import com.eventhub.app.ui.screens.*
 import com.eventhub.app.viewmodel.AppViewModel
+import com.eventhub.app.viewmodel.ThemeViewModel
 import kotlinx.coroutines.delay
 
 @Composable
-fun EventHubApp(viewModel: AppViewModel) {
+fun EventHubApp(
+    viewModel: AppViewModel,
+    themeViewModel: ThemeViewModel
+) {
     LaunchedEffect(Unit) {
         delay(2000)
         viewModel.navigateToScreen(AppScreen.LOGIN)
@@ -29,7 +33,8 @@ fun EventHubApp(viewModel: AppViewModel) {
             registeredEvents = viewModel.registeredEvents,
             onLogout = { viewModel.logout() },
             onRegisterEvent = { eventId -> viewModel.registerForEvent(eventId) },
-            onUnregisterEvent = { eventId -> viewModel.unregisterFromEvent(eventId) }
+            onUnregisterEvent = { eventId -> viewModel.unregisterFromEvent(eventId) },
+            themeViewModel = themeViewModel
         )
     }
 }
