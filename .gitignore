@@ -2,10 +2,19 @@
 .gradle/
 build/
 */build/
+gradle-wrapper.jar
+eventmanagement/.gradle/
+eventmanagement/app/build/
 
 # Android Studio
 .idea/
 *.iml
+.externalNativeBuild/
+.cxx/
+captures/
+.navigation/
+.profiler/
+eventmanagement/.idea/
 
 # Local
 local.properties
@@ -24,6 +33,16 @@ google-services.json
 *.jks
 *.keystore
 
+# Logs
+*.log
+
+# NDK
+obj/
+
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Misc
+*.tmp
+*.bak
