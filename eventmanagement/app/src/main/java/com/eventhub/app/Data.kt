@@ -34,7 +34,7 @@ val mockEvents = listOf(
     Event(
         id = "2",
         title = "Cultural Night: Rhythm & Beats",
-        description = "Experience an evening filled with music, dance, and cultural performances from students across all departments.",
+        description ="Experience an evening filled with music, dance, and cultural performances from students across all departments.",
         date = "Jan 20, 2026",
         time = "6:00 PM - 10:00 PM",
         location = "Open Air Theatre",
