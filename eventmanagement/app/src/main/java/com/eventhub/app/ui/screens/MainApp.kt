@@ -42,9 +42,11 @@ fun MainApp(
     user: User,
     events: List<Event>,
     registeredEvents: Set<String>,
+    currentEventIndex: Int,
     onLogout: () -> Unit,
     onRegisterEvent: (String) -> Unit,
     onUnregisterEvent: (String) -> Unit,
+    onUpdateEventIndex: (Int) -> Unit,
     themeViewModel: ThemeViewModel,
     onShowEventDetails: (Event) -> Unit
 ) {
@@ -52,17 +54,19 @@ fun MainApp(
     var showThemeMenu by remember { mutableStateOf(false) }
     val currentTheme by themeViewModel.themeMode.collectAsState()
     
-    // Maintain currentEventIndex across tab switches and filter changes
-    var currentEventIndex by remember { mutableStateOf(0) }
-    var discardedEvents by remember { mutableStateOf(setOf<String>()) }
+    val availableEvents = events.filter { it.id !in registeredEvents }
     
-    // Reset index if it's beyond available events
-    val availableEvents = events.filter { it.id !in registeredEvents && it.id !in discardedEvents }
-    LaunchedEffect(availableEvents.size) {
-        if (currentEventIndex >= availableEvents.size && availableEvents.isNotEmpty()) {
-            currentEventIndex = 0
+    // Get current event from original events list, not filtered
+    val currentEvent = if (events.isNotEmpty() && currentEventIndex < events.size) {
+        val eventAtIndex = events[currentEventIndex]
+        if (eventAtIndex.id in registeredEvents) {
+            // Current event is registered, find next available
+            events.drop(currentEventIndex + 1).firstOrNull { it.id !in registeredEvents }
+                ?: events.take(currentEventIndex).firstOrNull { it.id !in registeredEvents }
+        } else {
+            eventAtIndex
         }
-    }
+    } else null
 
     Scaffold(
         topBar = {
@@ -247,22 +251,21 @@ fun MainApp(
         when (selectedTab) {
             0 -> {
                 HomeScreen(
-                    availableEvents,
-                    registeredEvents,
-                    currentEventIndex,
-                    onCurrentEventIndexChange = { currentEventIndex = it },
+                    currentEvent = currentEvent,
+                    allEvents = events,
+                    registeredEvents = registeredEvents,
+                    currentEventIndex = currentEventIndex,
+                    onCurrentEventIndexChange = onUpdateEventIndex,
                     onRegisterEvent,
                     onUnregisterEvent,
                     onShowEventDetails,
-                    discardedEvents = discardedEvents,
-                    onDiscardEvent = { eventId -> discardedEvents = discardedEvents + eventId },
-                    onUndoDiscard = { eventId -> discardedEvents = discardedEvents - eventId },
                     Modifier.padding(padding)
                 )
             }
             1 -> MyEventsScreen(
                 events.filter { it.id in registeredEvents },
                 onUnregisterEvent,
+                onShowEventDetails,
                 Modifier.padding(padding)
             )
             2 -> ProfileScreen(user, Modifier.padding(padding))
@@ -272,28 +275,23 @@ fun MainApp(
 
 @Composable
 fun HomeScreen(
-    events: List<Event>,
+    currentEvent: Event?,
+    allEvents: List<Event>,
     registeredEvents: Set<String>,
     currentEventIndex: Int,
     onCurrentEventIndexChange: (Int) -> Unit,
     onRegisterEvent: (String) -> Unit,
     onUnregisterEvent: (String) -> Unit,
     onShowEventDetails: (Event) -> Unit,
-    discardedEvents: Set<String>,
-    onDiscardEvent: (String) -> Unit,
-    onUndoDiscard: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showUndoSnackbar by remember { mutableStateOf(false) }
-    var lastDiscardedEvent by remember { mutableStateOf<Event?>(null) }
-    
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceContainerLowest)
             .padding(16.dp)
     ) {
-        if (currentEventIndex >= events.size) {
+        if (currentEvent == null) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -312,12 +310,12 @@ fun HomeScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        "All caught up!",
+                        "No events available",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "You've seen all available events",
+                        "Check back later for new events",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -325,56 +323,19 @@ fun HomeScreen(
             }
         } else {
             SwipeableEventCard(
-                event = events[currentEventIndex],
+                event = currentEvent,
                 onSwipeLeft = {
-                    val currentEvent = events[currentEventIndex]
-                    lastDiscardedEvent = currentEvent
-                    onDiscardEvent(currentEvent.id)
-                    showUndoSnackbar = true
+                    // Left swipe = next event (index + 1)
+                    onCurrentEventIndexChange(currentEventIndex + 1)
                 },
                 onSwipeRight = {
-                    onShowEventDetails(events[currentEventIndex])
+                    // Right swipe = previous event (index - 1)
+                    onCurrentEventIndexChange(currentEventIndex - 1)
+                },
+                onCardClick = {
+                    onShowEventDetails(currentEvent)
                 }
             )
-        }
-        
-        if (showUndoSnackbar && lastDiscardedEvent != null) {
-            Card(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.inverseSurface
-                )
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Event discarded",
-                        color = MaterialTheme.colorScheme.inverseOnSurface,
-                        modifier = Modifier.weight(1f)
-                    )
-                    TextButton(
-                        onClick = {
-                            lastDiscardedEvent?.let { event ->
-                                onUndoDiscard(event.id)
-                            }
-                            showUndoSnackbar = false
-                            lastDiscardedEvent = null
-                        }
-                    ) {
-                        Text("UNDO", color = MaterialTheme.colorScheme.inversePrimary)
-                    }
-                }
-            }
-            
-            LaunchedEffect(showUndoSnackbar) {
-                kotlinx.coroutines.delay(3000)
-                showUndoSnackbar = false
-                lastDiscardedEvent = null
-            }
         }
     }
 }
@@ -383,7 +344,8 @@ fun HomeScreen(
 fun SwipeableEventCard(
     event: Event,
     onSwipeLeft: () -> Unit,
-    onSwipeRight: () -> Unit
+    onSwipeRight: () -> Unit,
+    onCardClick: () -> Unit
 ) {
     var offsetX by remember(event.id) { mutableStateOf(0f) }
     
@@ -399,8 +361,9 @@ fun SwipeableEventCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(300.dp)
+            .height(350.dp)
             .graphicsLayer(translationX = animatedOffsetX)
+            .clickable { onCardClick() }
             .pointerInput(event.id) {
                 detectDragGestures(
                     onDragEnd = {
@@ -475,6 +438,15 @@ fun SwipeableEventCard(
                     color = MaterialTheme.colorScheme.primary,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    "Tap for details • Swipe to browse",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
             }
         }
         
@@ -483,19 +455,14 @@ fun SwipeableEventCard(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(
-                        if (animatedOffsetX < 0) 
-                            Color.Green.copy(alpha = 0.3f) 
-                        else 
-                            Color.Red.copy(alpha = 0.3f)
-                    ),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    if (animatedOffsetX < 0) "VIEW DETAILS" else "DISCARD",
-                    color = Color.White,
+                    "NEXT EVENT",
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.headlineMedium
+                    style = MaterialTheme.typography.titleMedium
                 )
             }
         }
@@ -607,6 +574,7 @@ fun StatCard(
 fun MyEventsScreen(
     events: List<Event>,
     onUnregisterEvent: (String) -> Unit,
+    onShowEventDetails: (Event) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(

@@ -49,9 +49,11 @@ fun EventHubApp(
                 user = viewModel.currentUser!!,
                 events = viewModel.events,
                 registeredEvents = viewModel.registeredEvents,
+                currentEventIndex = viewModel.currentEventIndex,
                 onLogout = { viewModel.logout() },
                 onRegisterEvent = { eventId -> viewModel.registerForEvent(eventId) },
                 onUnregisterEvent = { eventId -> viewModel.unregisterFromEvent(eventId) },
+                onUpdateEventIndex = { index -> viewModel.updateCurrentEventIndex(index) },
                 themeViewModel = themeViewModel,
                 onShowEventDetails = { event ->
                     selectedEvent = event

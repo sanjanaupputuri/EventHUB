@@ -19,6 +19,9 @@ class AppViewModel : ViewModel() {
     var registeredEvents by mutableStateOf<Set<String>>(emptySet())
         private set
 
+    var currentEventIndex by mutableStateOf(0)
+        private set
+
     fun navigateToScreen(screen: AppScreen) {
         currentScreen = screen
     }
@@ -31,15 +34,58 @@ class AppViewModel : ViewModel() {
     fun logout() {
         currentUser = null
         registeredEvents = emptySet()
+        currentEventIndex = 0
         currentScreen = AppScreen.LOGIN
     }
 
     fun registerForEvent(eventId: String) {
         registeredEvents = registeredEvents + eventId
+        // Move to next available event in original order
+        val allEvents = getSampleEvents()
+        val currentEventInOriginal = allEvents.indexOfFirst { it.id == eventId }
+        if (currentEventInOriginal >= 0) {
+            // Find next unregistered event after current one
+            for (i in (currentEventInOriginal + 1) until allEvents.size) {
+                if (allEvents[i].id !in (registeredEvents + eventId)) {
+                    currentEventIndex = i
+                    return
+                }
+            }
+            // If no event found after current, wrap to beginning
+            for (i in 0 until currentEventInOriginal) {
+                if (allEvents[i].id !in (registeredEvents + eventId)) {
+                    currentEventIndex = i
+                    return
+                }
+            }
+        }
     }
 
     fun unregisterFromEvent(eventId: String) {
         registeredEvents = registeredEvents - eventId
+    }
+
+    fun updateCurrentEventIndex(index: Int) {
+        val allEvents = getSampleEvents()
+        if (allEvents.isEmpty()) return
+        
+        val direction = if (index >= currentEventIndex) 1 else -1
+        var newIndex = index % allEvents.size
+        if (newIndex < 0) newIndex += allEvents.size
+        
+        // Search in the correct direction
+        for (i in 0 until allEvents.size) {
+            val checkIndex = if (direction > 0) {
+                (newIndex + i) % allEvents.size
+            } else {
+                (newIndex - i + allEvents.size) % allEvents.size
+            }
+            
+            if (allEvents[checkIndex].id !in registeredEvents) {
+                currentEventIndex = checkIndex
+                return
+            }
+        }
     }
 
     private fun getSampleEvents(): List<Event> {

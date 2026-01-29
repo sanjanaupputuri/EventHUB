@@ -22,8 +22,6 @@ fun EventDetailsScreen(
     onBack: () -> Unit,
     onRegister: () -> Unit
 ) {
-    var isRegistered by remember { mutableStateOf(false) }
-    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -110,36 +108,14 @@ fun EventDetailsScreen(
         }
         
         // Register button
-        if (isRegistered) {
-            Button(
-                onClick = { },
-                enabled = false,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    disabledContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            ) {
-                Icon(Icons.Default.CheckCircle, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Registered")
-            }
-        } else {
-            Button(
-                onClick = {
-                    onRegister()
-                    isRegistered = true
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Register for Event")
-            }
+        Button(
+            onClick = onRegister,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text("Register for Event")
         }
     }
 }
