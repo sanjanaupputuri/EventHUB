@@ -1,354 +1,177 @@
 package com.eventhub.app.ui.screens
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.background
+import androidx.compose.ui.unit.sp
+import com.eventhub.app.auth.AuthManager
 import com.eventhub.app.data.User
+import kotlinx.coroutines.launch
 
 @Composable
 fun SignupScreen(
     onSignup: (User) -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var collegeId by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var showError by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val scrollState = rememberScrollState()
+    LaunchedEffect(Unit) {
+        AuthManager.initialize(context)
+    }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            scope.launch {
+                isLoading = true
+                AuthManager.signInWithGoogle(result.data)
+                    .onSuccess { email ->
+                        val rollNumber = email.substringBefore("@")
+                        onSignup(User(rollNumber, rollNumber, email, rollNumber))
+                    }
+                    .onFailure { 
+                        errorMessage = it.message
+                        // Auto-hide error after 3 seconds
+                        scope.launch {
+                            kotlinx.coroutines.delay(3000)
+                            errorMessage = null
+                        }
+                    }
+                isLoading = false
+            }
+        }
+    }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(24.dp),
+                .fillMaxWidth()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo/Brand Section
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(80.dp)
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Icon(
-                        Icons.Filled.Event,
-                        contentDescription = null,
-                        modifier = Modifier.size(40.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            // Title Section
+            // UNIS Title
             Text(
-                text = "Create Account",
-                style = MaterialTheme.typography.headlineLarge,
+                text = "UNIS",
+                fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center
             )
-
-            Spacer(Modifier.height(8.dp))
-
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Tagline
             Text(
-                text = "Join EventHub and start discovering amazing events",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = "BVRITH College Events",
+                fontSize = 18.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
             )
-
-            Spacer(Modifier.height(40.dp))
-
-            // Signup Form Card
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 2.dp
-                ),
-                modifier = Modifier.fillMaxWidth()
+            
+            Spacer(modifier = Modifier.height(48.dp))
+            
+            // Signup Button
+            Button(
+                onClick = { 
+                    errorMessage = null // Clear previous error
+                    // Clear Google Sign-In state before new attempt
+                    scope.launch {
+                        try {
+                            AuthManager.clearSignInState()
+                        } catch (ignored: Exception) {}
+                        launcher.launch(AuthManager.getSignInIntent())
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                enabled = !isLoading,
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    // Full Name Field
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Email,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        "Full Name",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        "Signup with College Mail ID",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
                     )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = {
-                            name = it
-                            showError = false
-                        },
-                        placeholder = { Text("Enter your full name") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Outlined.Person,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                        ),
-                        isError = showError && name.isBlank()
-                    )
-
-                    Spacer(Modifier.height(20.dp))
-
-                    // Email Field
-                    Text(
-                        "Email",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = {
-                            email = it
-                            showError = false
-                        },
-                        placeholder = { Text("your.email@example.com") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Outlined.Email,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                        ),
-                        isError = showError && email.isBlank()
-                    )
-
-                    Spacer(Modifier.height(20.dp))
-
-                    // College ID Field
-                    Text(
-                        "College ID",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = collegeId,
-                        onValueChange = {
-                            collegeId = it
-                            showError = false
-                        },
-                        placeholder = { Text("Enter your college ID") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Outlined.Badge,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                        ),
-                        isError = showError && collegeId.isBlank()
-                    )
-
-                    Spacer(Modifier.height(20.dp))
-
-                    // Password Field
-                    Text(
-                        "Password",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = {
-                            password = it
-                            showError = false
-                        },
-                        placeholder = { Text("Create a strong password") },
-                        visualTransformation = if (passwordVisible)
-                            VisualTransformation.None
-                        else
-                            PasswordVisualTransformation(),
-                        leadingIcon = {
-                            Icon(
-                                Icons.Outlined.Lock,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        trailingIcon = {
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(
-                                    if (passwordVisible)
-                                        Icons.Filled.Visibility
-                                    else
-                                        Icons.Filled.VisibilityOff,
-                                    contentDescription = if (passwordVisible)
-                                        "Hide password"
-                                    else
-                                        "Show password",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                        ),
-                        isError = showError && password.isBlank()
-                    )
-
-                    if (showError) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "Please fill in all fields",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-
-                    Spacer(Modifier.height(24.dp))
-
-                    // Signup Button
-                    Button(
-                        onClick = {
-                            if (name.isNotBlank() &&
-                                email.isNotBlank() &&
-                                password.isNotBlank() &&
-                                collegeId.isNotBlank()) {
-                                onSignup(User("2", name, email, collegeId))
-                            } else {
-                                showError = true
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 2.dp,
-                            pressedElevation = 6.dp
-                        )
-                    ) {
-                        Icon(
-                            Icons.Filled.PersonAdd,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "Create Account",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
                 }
             }
-
-            Spacer(Modifier.height(24.dp))
-
-            // Login Section
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                ),
-                modifier = Modifier.fillMaxWidth()
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Login Link
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Text(
+                    text = "Already have an account? ",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                TextButton(
+                    onClick = onNavigateToLogin,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Already have an account?",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = "Sign in to your account",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    FilledTonalButton(
-                        onClick = onNavigateToLogin,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Sign In")
-                        Spacer(Modifier.width(4.dp))
-                        Icon(
-                            Icons.Filled.ArrowForward,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    Text(
+                        text = "Login",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
-
-            Spacer(Modifier.height(24.dp))
+            
+            // Error Message
+            errorMessage?.let { error ->
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = error,
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
         }
     }
 }
