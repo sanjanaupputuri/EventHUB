@@ -74,7 +74,7 @@ fun MainApp(
             TopAppBar(
                 title = {
                     Text(
-                        "EventHub",
+                        "UNIS",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
