@@ -555,11 +555,11 @@ fun SwipeableEventCard(
                         val threshold = screenWidth * 0.3f
                         when {
                             offsetX > threshold -> {
-                                onSwipeLeft()
+                                onSwipeRight()
                                 offsetX = 0f
                             }
                             offsetX < -threshold -> {
-                                onSwipeRight()
+                                onSwipeLeft()
                                 offsetX = 0f
                             }
                             else -> offsetX = 0f
