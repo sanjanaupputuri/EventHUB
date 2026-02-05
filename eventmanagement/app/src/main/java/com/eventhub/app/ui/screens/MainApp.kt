@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.Dp
 import kotlin.math.abs
 import kotlin.math.sign
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -285,57 +286,236 @@ fun HomeScreen(
     onShowEventDetails: (Event) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedCategories by remember { mutableStateOf(setOf<String>()) }
+    var showFilterSheet by remember { mutableStateOf(false) }
+    
+    val availableCategories = listOf("Technical", "Cultural", "Sports", "Workshop", "Business", "Gaming", "Social")
+    
+    val filteredEvents = allEvents.filter { event ->
+        val matchesSearch = event.title.contains(searchQuery, ignoreCase = true) ||
+                           event.description.contains(searchQuery, ignoreCase = true)
+        val matchesCategory = selectedCategories.isEmpty() || event.category in selectedCategories
+        val notRegistered = event.id !in registeredEvents
+        matchesSearch && matchesCategory && notRegistered
+    }
+    
+    val displayEvent = filteredEvents.getOrNull(0)
+    
+    Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-            .padding(16.dp)
     ) {
-        if (currentEvent == null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.Center),
-                shape = RoundedCornerShape(20.dp)
+        // Search and Filter Bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("Search events...") },
+                leadingIcon = { Icon(Icons.Default.Search, null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Close, "Clear")
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+            
+            Surface(
+                onClick = { showFilterSheet = true },
+                shape = RoundedCornerShape(12.dp),
+                color = if (selectedCategories.isEmpty()) 
+                    MaterialTheme.colorScheme.surface 
+                else 
+                    MaterialTheme.colorScheme.primaryContainer,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (selectedCategories.isEmpty())
+                        MaterialTheme.colorScheme.outline
+                    else
+                        MaterialTheme.colorScheme.primary
+                )
             ) {
-                Column(
-                    modifier = Modifier.padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Box(
+                    modifier = Modifier
+                        .size(56.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "No events available",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        "Check back later for new events",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        Icons.Default.FilterList,
+                        "Filter",
+                        tint = if (selectedCategories.isEmpty())
+                            MaterialTheme.colorScheme.onSurface
+                        else
+                            MaterialTheme.colorScheme.primary
                     )
                 }
             }
-        } else {
-            SwipeableEventCard(
-                event = currentEvent,
-                onSwipeLeft = {
-                    // Left swipe = next event (index + 1)
-                    onCurrentEventIndexChange(currentEventIndex + 1)
-                },
-                onSwipeRight = {
-                    // Right swipe = previous event (index - 1)
-                    onCurrentEventIndexChange(currentEventIndex - 1)
-                },
-                onCardClick = {
-                    onShowEventDetails(currentEvent)
+        }
+        
+        // Active Filters
+        if (selectedCategories.isNotEmpty()) {
+            androidx.compose.foundation.lazy.LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(selectedCategories.toList()) { category ->
+                    FilterChip(
+                        selected = true,
+                        onClick = { selectedCategories = selectedCategories - category },
+                        label = { Text(category) },
+                        trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
+                    )
                 }
-            )
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+        
+        // Event Card
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            if (displayEvent == null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            if (searchQuery.isNotEmpty() || selectedCategories.isNotEmpty())
+                                "No matching events"
+                            else
+                                "No events available",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            if (searchQuery.isNotEmpty() || selectedCategories.isNotEmpty())
+                                "Try adjusting your filters"
+                            else
+                                "Check back later for new events",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                SwipeableEventCard(
+                    event = displayEvent,
+                    onSwipeLeft = {
+                        val currentIndex = filteredEvents.indexOf(displayEvent)
+                        if (currentIndex < filteredEvents.size - 1) {
+                            // Show next filtered event
+                        }
+                    },
+                    onSwipeRight = {
+                        val currentIndex = filteredEvents.indexOf(displayEvent)
+                        if (currentIndex > 0) {
+                            // Show previous filtered event
+                        }
+                    },
+                    onCardClick = {
+                        onShowEventDetails(displayEvent)
+                    }
+                )
+            }
+        }
+    }
+    
+    // Filter Bottom Sheet
+    if (showFilterSheet) {
+        androidx.compose.material3.ModalBottomSheet(
+            onDismissRequest = { showFilterSheet = false }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    "Filter by Category",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                availableCategories.forEach { category ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                selectedCategories = if (category in selectedCategories) {
+                                    selectedCategories - category
+                                } else {
+                                    selectedCategories + category
+                                }
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = category in selectedCategories,
+                            onCheckedChange = null
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            category,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+                
+                Spacer(Modifier.height(16.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            selectedCategories = emptySet()
+                            showFilterSheet = false
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Clear All")
+                    }
+                    Button(
+                        onClick = { showFilterSheet = false },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Apply")
+                    }
+                }
+                
+                Spacer(Modifier.height(16.dp))
+            }
         }
     }
 }
