@@ -1,8 +1,11 @@
 package com.eventhub.app.ui
 
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import com.eventhub.app.auth.AuthManager
 import com.eventhub.app.data.AppScreen
 import com.eventhub.app.data.Event
+import com.eventhub.app.data.User
 import com.eventhub.app.ui.screens.*
 import com.eventhub.app.viewmodel.AppViewModel
 import com.eventhub.app.viewmodel.ThemeViewModel
@@ -13,12 +16,24 @@ fun EventHubApp(
     viewModel: AppViewModel,
     themeViewModel: ThemeViewModel
 ) {
+    val context = LocalContext.current
     var showEventDetails by remember { mutableStateOf(false) }
     var selectedEvent by remember { mutableStateOf<Event?>(null) }
     
     LaunchedEffect(Unit) {
+        AuthManager.initialize(context)
         delay(2000)
-        viewModel.navigateToScreen(AppScreen.LOGIN)
+        
+        // Check if user is already logged in
+        if (AuthManager.isLoggedIn()) {
+            val email = AuthManager.getCurrentUserEmail() ?: ""
+            val rollNumber = email.substringBefore("@")
+            val user = User(rollNumber, rollNumber, email, rollNumber)
+            viewModel.login(user)
+            viewModel.navigateToScreen(AppScreen.MAIN)
+        } else {
+            viewModel.navigateToScreen(AppScreen.LOGIN)
+        }
     }
 
     if (showEventDetails && selectedEvent != null) {

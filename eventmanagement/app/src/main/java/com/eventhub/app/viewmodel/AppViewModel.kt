@@ -32,6 +32,7 @@ class AppViewModel : ViewModel() {
     }
 
     fun logout() {
+        com.eventhub.app.auth.AuthManager.signOut()
         currentUser = null
         registeredEvents = emptySet()
         currentEventIndex = 0
