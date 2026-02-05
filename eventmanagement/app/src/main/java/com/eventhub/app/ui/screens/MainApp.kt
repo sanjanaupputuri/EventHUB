@@ -21,6 +21,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import com.eventhub.app.ui.theme.ThemeMode
 import com.eventhub.app.viewmodel.ThemeViewModel
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.unit.Dp
+import kotlin.math.abs
+import kotlin.math.sign
+import androidx.compose.foundation.clickable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,14 +42,31 @@ fun MainApp(
     user: User,
     events: List<Event>,
     registeredEvents: Set<String>,
+    currentEventIndex: Int,
     onLogout: () -> Unit,
     onRegisterEvent: (String) -> Unit,
     onUnregisterEvent: (String) -> Unit,
-    themeViewModel: ThemeViewModel // Add this parameter
+    onUpdateEventIndex: (Int) -> Unit,
+    themeViewModel: ThemeViewModel,
+    onShowEventDetails: (Event) -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     var showThemeMenu by remember { mutableStateOf(false) }
     val currentTheme by themeViewModel.themeMode.collectAsState()
+    
+    val availableEvents = events.filter { it.id !in registeredEvents }
+    
+    // Get current event from original events list, not filtered
+    val currentEvent = if (events.isNotEmpty() && currentEventIndex < events.size) {
+        val eventAtIndex = events[currentEventIndex]
+        if (eventAtIndex.id in registeredEvents) {
+            // Current event is registered, find next available
+            events.drop(currentEventIndex + 1).firstOrNull { it.id !in registeredEvents }
+                ?: events.take(currentEventIndex).firstOrNull { it.id !in registeredEvents }
+        } else {
+            eventAtIndex
+        }
+    } else null
 
     Scaffold(
         topBar = {
@@ -218,16 +249,23 @@ fun MainApp(
         }
     ) { padding ->
         when (selectedTab) {
-            0 -> HomeScreen(
-                events,
-                registeredEvents,
-                onRegisterEvent,
-                onUnregisterEvent,
-                Modifier.padding(padding)
-            )
+            0 -> {
+                HomeScreen(
+                    currentEvent = currentEvent,
+                    allEvents = events,
+                    registeredEvents = registeredEvents,
+                    currentEventIndex = currentEventIndex,
+                    onCurrentEventIndexChange = onUpdateEventIndex,
+                    onRegisterEvent,
+                    onUnregisterEvent,
+                    onShowEventDetails,
+                    Modifier.padding(padding)
+                )
+            }
             1 -> MyEventsScreen(
                 events.filter { it.id in registeredEvents },
                 onUnregisterEvent,
+                onShowEventDetails,
                 Modifier.padding(padding)
             )
             2 -> ProfileScreen(user, Modifier.padding(padding))
@@ -237,46 +275,196 @@ fun MainApp(
 
 @Composable
 fun HomeScreen(
-    events: List<Event>,
+    currentEvent: Event?,
+    allEvents: List<Event>,
     registeredEvents: Set<String>,
+    currentEventIndex: Int,
+    onCurrentEventIndexChange: (Int) -> Unit,
     onRegisterEvent: (String) -> Unit,
     onUnregisterEvent: (String) -> Unit,
+    onShowEventDetails: (Event) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+            .padding(16.dp)
     ) {
-        item {
-            WelcomeHeader()
-        }
-
-        item {
-            EventStatsCard(
-                totalEvents = events.size,
-                registeredCount = registeredEvents.size
+        if (currentEvent == null) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.Center),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "No events available",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Check back later for new events",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            SwipeableEventCard(
+                event = currentEvent,
+                onSwipeLeft = {
+                    // Left swipe = next event (index + 1)
+                    onCurrentEventIndexChange(currentEventIndex + 1)
+                },
+                onSwipeRight = {
+                    // Right swipe = previous event (index - 1)
+                    onCurrentEventIndexChange(currentEventIndex - 1)
+                },
+                onCardClick = {
+                    onShowEventDetails(currentEvent)
+                }
             )
         }
+    }
+}
 
-        item {
-            Text(
-                "Discover Events",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-            )
+@Composable
+fun SwipeableEventCard(
+    event: Event,
+    onSwipeLeft: () -> Unit,
+    onSwipeRight: () -> Unit,
+    onCardClick: () -> Unit
+) {
+    var offsetX by remember(event.id) { mutableStateOf(0f) }
+    
+    val density = LocalDensity.current
+    val screenWidth = with(density) { 400.dp.toPx() }
+    
+    val animatedOffsetX by animateFloatAsState(
+        targetValue = offsetX,
+        animationSpec = tween(300),
+        label = "cardOffset"
+    )
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(350.dp)
+            .graphicsLayer(translationX = animatedOffsetX)
+            .clickable { onCardClick() }
+            .pointerInput(event.id) {
+                detectDragGestures(
+                    onDragEnd = {
+                        val threshold = screenWidth * 0.3f
+                        when {
+                            offsetX > threshold -> {
+                                onSwipeLeft()
+                                offsetX = 0f
+                            }
+                            offsetX < -threshold -> {
+                                onSwipeRight()
+                                offsetX = 0f
+                            }
+                            else -> offsetX = 0f
+                        }
+                    }
+                ) { _, dragAmount ->
+                    offsetX = (offsetX + dragAmount.x).coerceIn(-screenWidth, screenWidth)
+                }
+            },
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
+                    .background(
+                        when (event.category) {
+                            "Technical" -> MaterialTheme.colorScheme.primaryContainer
+                            "Cultural" -> MaterialTheme.colorScheme.secondaryContainer
+                            "Sports" -> MaterialTheme.colorScheme.tertiaryContainer
+                            else -> MaterialTheme.colorScheme.surfaceContainer
+                        }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    when (event.category) {
+                        "Technical" -> Icons.Default.Computer
+                        "Cultural" -> Icons.Default.MusicNote
+                        "Sports" -> Icons.Default.SportsBasketball
+                        else -> Icons.Default.Event
+                    },
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    event.title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    event.date,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    "Tap for details • Swipe to browse",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
         }
-
-        items(events) { event ->
-            EventCard(
-                event = event,
-                isRegistered = event.id in registeredEvents,
-                onRegister = { onRegisterEvent(event.id) },
-                onUnregister = { onUnregisterEvent(event.id) }
-            )
+        
+        // Swipe indicators
+        if (abs(animatedOffsetX) > 80f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "NEXT EVENT",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
         }
     }
 }
@@ -386,6 +574,7 @@ fun StatCard(
 fun MyEventsScreen(
     events: List<Event>,
     onUnregisterEvent: (String) -> Unit,
+    onShowEventDetails: (Event) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
