@@ -274,6 +274,7 @@ fun MainApp(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     currentEvent: Event?,
