@@ -290,6 +290,7 @@ fun HomeScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategories by remember { mutableStateOf(setOf<String>()) }
     var showFilterSheet by remember { mutableStateOf(false) }
+    var filteredEventIndex by remember { mutableStateOf(0) }
     
     val availableCategories = listOf("Technical", "Cultural", "Sports", "Workshop", "Business", "Gaming", "Social")
     
@@ -301,7 +302,12 @@ fun HomeScreen(
         matchesSearch && matchesCategory && notRegistered
     }
     
-    val displayEvent = filteredEvents.getOrNull(0)
+    // Reset index when filters change
+    LaunchedEffect(searchQuery, selectedCategories) {
+        filteredEventIndex = 0
+    }
+    
+    val displayEvent = filteredEvents.getOrNull(filteredEventIndex)
     
     Column(
         modifier = modifier
@@ -430,15 +436,13 @@ fun HomeScreen(
                 SwipeableEventCard(
                     event = displayEvent,
                     onSwipeLeft = {
-                        val currentIndex = filteredEvents.indexOf(displayEvent)
-                        if (currentIndex < filteredEvents.size - 1) {
-                            // Show next filtered event
+                        if (filteredEventIndex < filteredEvents.size - 1) {
+                            filteredEventIndex++
                         }
                     },
                     onSwipeRight = {
-                        val currentIndex = filteredEvents.indexOf(displayEvent)
-                        if (currentIndex > 0) {
-                            // Show previous filtered event
+                        if (filteredEventIndex > 0) {
+                            filteredEventIndex--
                         }
                     },
                     onCardClick = {
