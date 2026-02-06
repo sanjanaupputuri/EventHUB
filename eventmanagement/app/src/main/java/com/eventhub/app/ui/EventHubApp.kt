@@ -65,10 +65,12 @@ fun EventHubApp(
                 events = viewModel.events,
                 registeredEvents = viewModel.registeredEvents,
                 currentEventIndex = viewModel.currentEventIndex,
+                notificationsEnabled = viewModel.notificationsEnabled,
                 onLogout = { viewModel.logout() },
                 onRegisterEvent = { eventId -> viewModel.registerForEvent(eventId) },
                 onUnregisterEvent = { eventId -> viewModel.unregisterFromEvent(eventId) },
                 onUpdateEventIndex = { index -> viewModel.updateCurrentEventIndex(index) },
+                onToggleNotifications = { enabled -> viewModel.toggleNotifications(enabled) },
                 themeViewModel = themeViewModel,
                 onShowEventDetails = { event ->
                     selectedEvent = event

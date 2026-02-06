@@ -17,7 +17,8 @@ data class Event(
     val category: String,
     val organizer: String,
     val maxParticipants: Int,
-    val currentParticipants: Int = 0
+    val currentParticipants: Int = 0,
+    val timestamp: Long = 0L // For notifications
 )
 
 enum class AppScreen {
@@ -35,7 +36,8 @@ val mockEvents = listOf(
         category = "Technical",
         organizer = "Computer Science Department",
         maxParticipants = 500,
-        currentParticipants = 342
+        currentParticipants = 342,
+        timestamp = System.currentTimeMillis() + (7 * 24 * 60 * 60 * 1000)
     ),
     Event(
         id = "2",
@@ -47,7 +49,8 @@ val mockEvents = listOf(
         category = "Cultural",
         organizer = "Cultural Committee",
         maxParticipants = 800,
-        currentParticipants = 654
+        currentParticipants = 654,
+        timestamp = System.currentTimeMillis() + (12 * 24 * 60 * 60 * 1000)
     ),
     Event(
         id = "3",
@@ -59,7 +62,8 @@ val mockEvents = listOf(
         category = "Sports",
         organizer = "Sports Department",
         maxParticipants = 200,
-        currentParticipants = 156
+        currentParticipants = 156,
+        timestamp = System.currentTimeMillis() + (17 * 24 * 60 * 60 * 1000)
     ),
     Event(
         id = "4",
@@ -71,7 +75,8 @@ val mockEvents = listOf(
         category = "Workshop",
         organizer = "Tech Club",
         maxParticipants = 50,
-        currentParticipants = 35
+        currentParticipants = 35,
+        timestamp = System.currentTimeMillis() + (25 * 24 * 60 * 60 * 1000)
     ),
     Event(
         id = "5",
@@ -83,7 +88,8 @@ val mockEvents = listOf(
         category = "Cultural",
         organizer = "Photography Club",
         maxParticipants = 300,
-        currentParticipants = 89
+        currentParticipants = 89,
+        timestamp = System.currentTimeMillis() + (31 * 24 * 60 * 60 * 1000)
     ),
     Event(
         id = "6",
@@ -95,7 +101,8 @@ val mockEvents = listOf(
         category = "Business",
         organizer = "Entrepreneurship Cell",
         maxParticipants = 100,
-        currentParticipants = 67
+        currentParticipants = 67,
+        timestamp = System.currentTimeMillis() + (35 * 24 * 60 * 60 * 1000)
     ),
     Event(
         id = "7",
@@ -107,7 +114,8 @@ val mockEvents = listOf(
         category = "Gaming",
         organizer = "Gaming Club",
         maxParticipants = 128,
-        currentParticipants = 98
+        currentParticipants = 98,
+        timestamp = System.currentTimeMillis() + (38 * 24 * 60 * 60 * 1000)
     ),
     Event(
         id = "8",
@@ -119,6 +127,7 @@ val mockEvents = listOf(
         category = "Social",
         organizer = "Green Club",
         maxParticipants = 200,
-        currentParticipants = 145
+        currentParticipants = 145,
+        timestamp = System.currentTimeMillis() + (41 * 24 * 60 * 60 * 1000)
     )
 )

@@ -44,10 +44,12 @@ fun MainApp(
     events: List<Event>,
     registeredEvents: Set<String>,
     currentEventIndex: Int,
+    notificationsEnabled: Boolean,
     onLogout: () -> Unit,
     onRegisterEvent: (String) -> Unit,
     onUnregisterEvent: (String) -> Unit,
     onUpdateEventIndex: (Int) -> Unit,
+    onToggleNotifications: (Boolean) -> Unit,
     themeViewModel: ThemeViewModel,
     onShowEventDetails: (Event) -> Unit
 ) {
@@ -269,7 +271,12 @@ fun MainApp(
                 onShowEventDetails,
                 Modifier.padding(padding)
             )
-            2 -> ProfileScreen(user, Modifier.padding(padding))
+            2 -> ProfileScreen(
+                user, 
+                notificationsEnabled,
+                onToggleNotifications,
+                Modifier.padding(padding)
+            )
         }
     }
 }
@@ -841,6 +848,8 @@ fun EmptyStateCard() {
 @Composable
 fun ProfileScreen(
     user: User,
+    notificationsEnabled: Boolean,
+    onToggleNotifications: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -864,6 +873,50 @@ fun ProfileScreen(
 
         item {
             ProfileDetailsCard(user)
+        }
+        
+        item {
+            NotificationSettingsCard(notificationsEnabled, onToggleNotifications)
+        }
+    }
+}
+
+@Composable
+fun NotificationSettingsCard(
+    enabled: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Event Reminders",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Get notified 1 day before events",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(
+                checked = enabled,
+                onCheckedChange = onToggle
+            )
         }
     }
 }
