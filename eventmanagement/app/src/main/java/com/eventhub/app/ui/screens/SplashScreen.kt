@@ -87,7 +87,7 @@ fun SplashScreen() {
 
             // App Name
             Text(
-                text = "EventHub",
+                text = "UNIS",
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
