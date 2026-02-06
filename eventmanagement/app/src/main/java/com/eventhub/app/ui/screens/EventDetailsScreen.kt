@@ -27,7 +27,6 @@ fun EventDetailsScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Back button row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -110,7 +109,6 @@ fun EventDetailsScreen(
             }
         }
         
-        // Register button
         Button(
             onClick = onRegister,
             modifier = Modifier
