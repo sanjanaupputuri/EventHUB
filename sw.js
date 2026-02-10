@@ -1,9 +1,10 @@
-const CACHE_NAME = 'eventhub-v1';
+const CACHE_NAME = 'eventhub-v2';
 const urlsToCache = [
   '/',
   '/index.html',
   '/css/style.css',
   '/js/app.js',
+  '/js/data.js',
   '/manifest.json'
 ];
 
