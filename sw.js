@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eventhub-v2';
+const CACHE_NAME = 'unis-v1';
 const urlsToCache = [
   '/',
   '/index.html',

@@ -1,13 +1,14 @@
 {
-  "name": "College Event Manager",
-  "short_name": "EventHub",
+  "name": "UNIS - College Event Manager",
+  "short_name": "UNIS",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2196F3",
+  "background_color": "#FFFFFF",
+  "theme_color": "#6200EE",
   "orientation": "portrait-primary",
-  "description": "Manage college events seamlessly",
+  "description": "Discover and manage college events with UNIS - Your centralized platform for campus activities",
+  "categories": ["education", "productivity", "social"],
   "icons": [
     {
       "src": "images/icon-192.png",
