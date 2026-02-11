@@ -319,6 +319,16 @@ class EventHubApp {
       'Social': '👥'
     }[currentEvent.category] || '📅';
     
+    const categoryColor = {
+      'Technical': 'var(--primary)',
+      'Cultural': 'var(--secondary)',
+      'Sports': '#FF6B6B',
+      'Workshop': '#4ECDC4',
+      'Business': '#FFD93D',
+      'Gaming': '#A8E6CF',
+      'Social': '#FF8B94'
+    }[currentEvent.category] || 'var(--primary)';
+    
     return `
       <div class="search-filter-bar">
         <input type="text" class="search-input" placeholder="Search events..." id="searchInput">
@@ -327,7 +337,7 @@ class EventHubApp {
       
       <div class="swipe-container">
         <div class="swipe-card" id="swipeCard" onclick="app.showEventDetails(${JSON.stringify(currentEvent).replace(/"/g, '&quot;')})">
-          <div class="card-icon-header">
+          <div class="card-icon-header" style="background: ${categoryColor};">
             <span class="card-icon">${categoryIcon}</span>
           </div>
           <div class="swipe-card-content">
