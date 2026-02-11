@@ -7,9 +7,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Google Sign-In Configuration
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'; // Replace with your actual client ID
-
 // App State Management
 class EventHubApp {
   constructor() {
@@ -31,57 +28,7 @@ class EventHubApp {
 
   init() {
     this.applyTheme();
-    this.initGoogleSignIn();
     this.showSplash();
-  }
-
-  initGoogleSignIn() {
-    if (typeof google !== 'undefined') {
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (response) => this.handleGoogleSignIn(response)
-      });
-      this.googleInitialized = true;
-    } else {
-      setTimeout(() => this.initGoogleSignIn(), 100);
-    }
-  }
-
-  handleGoogleSignIn(response) {
-    try {
-      const payload = JSON.parse(atob(response.credential.split('.')[1]));
-      const email = payload.email;
-      
-      // Validate college email (customize domain as needed)
-      if (!email.endsWith('@yourdomain.edu')) {
-        alert('Please use your college email address');
-        return;
-      }
-      
-      const rollNumber = email.split('@')[0];
-      this.user = {
-        id: payload.sub,
-        name: payload.name || rollNumber,
-        email: email,
-        collegeId: rollNumber
-      };
-      localStorage.setItem('user', JSON.stringify(this.user));
-      this.showMain();
-    } catch (error) {
-      console.error('Google Sign-In error:', error);
-      alert('Sign-in failed. Please try again.');
-    }
-  }
-
-  renderGoogleButton() {
-    setTimeout(() => {
-      if (this.googleInitialized) {
-        google.accounts.id.renderButton(
-          document.getElementById('googleSignInButton'),
-          { theme: this.theme === 'dark' ? 'filled_black' : 'outline', size: 'large', width: 280 }
-        );
-      }
-    }, 0);
   }
 
   applyTheme() {
@@ -261,33 +208,44 @@ class EventHubApp {
   }
 
   renderLogin() {
-    setTimeout(() => this.renderGoogleButton(), 0);
     return `
       <div class="auth-container">
         <h1 class="auth-title">Welcome Back</h1>
         <p class="auth-subtitle">Sign in with your college email</p>
         
-        <div id="googleSignInButton" style="display: flex; justify-content: center; margin: 2rem 0;"></div>
-        
-        <div style="text-align: center; color: var(--text-secondary); font-size: 0.875rem; margin-top: 1rem;">
-          Use your college email to sign in
-        </div>
+        <button class="btn btn-primary" onclick="app.handleGoogleSignIn()" style="margin-top: 2rem;">
+          Sign in with Google
+        </button>
       </div>
     `;
   }
 
+  async handleGoogleSignIn() {
+    const result = await window.AuthManager.signInWithGoogle();
+    if (result.success) {
+      const rollNumber = result.email.split('@')[0];
+      this.user = {
+        id: Date.now().toString(),
+        name: rollNumber,
+        email: result.email,
+        collegeId: rollNumber
+      };
+      localStorage.setItem('user', JSON.stringify(this.user));
+      this.showMain();
+    } else {
+      alert(result.error);
+    }
+  }
+
   renderSignup() {
-    setTimeout(() => this.renderGoogleButton(), 0);
     return `
       <div class="auth-container">
         <h1 class="auth-title">Create Account</h1>
         <p class="auth-subtitle">Sign up with your college email</p>
         
-        <div id="googleSignInButton" style="display: flex; justify-content: center; margin: 2rem 0;"></div>
-        
-        <div style="text-align: center; color: var(--text-secondary); font-size: 0.875rem; margin-top: 1rem;">
-          Use your college email to create an account
-        </div>
+        <button class="btn btn-primary" onclick="app.handleGoogleSignIn()" style="margin-top: 2rem;">
+          Sign up with Google
+        </button>
       </div>
     `;
   }
