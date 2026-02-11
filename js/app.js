@@ -309,6 +309,16 @@ class EventHubApp {
     
     setTimeout(() => this.initSwipe(), 0);
     
+    const categoryIcon = {
+      'Technical': '💻',
+      'Cultural': '🎵',
+      'Sports': '⚽',
+      'Workshop': '🛠️',
+      'Business': '💼',
+      'Gaming': '🎮',
+      'Social': '👥'
+    }[currentEvent.category] || '📅';
+    
     return `
       <div class="search-filter-bar">
         <input type="text" class="search-input" placeholder="Search events..." id="searchInput">
@@ -317,19 +327,14 @@ class EventHubApp {
       
       <div class="swipe-container">
         <div class="swipe-card" id="swipeCard" onclick="app.showEventDetails(${JSON.stringify(currentEvent).replace(/"/g, '&quot;')})">
-          <img src="${currentEvent.imageUrl}" alt="${currentEvent.title}" class="event-image">
+          <div class="card-icon-header">
+            <span class="card-icon">${categoryIcon}</span>
+          </div>
           <div class="swipe-card-content">
             <h2 class="event-title">${currentEvent.title}</h2>
-            <span class="category-badge">${currentEvent.category}</span>
-            <div class="event-meta" style="margin-top: 1rem;">
-              <div class="event-meta-item">📅 ${currentEvent.date}</div>
-              <div class="event-meta-item">🕐 ${currentEvent.time}</div>
-              <div class="event-meta-item">👥 ${currentEvent.currentParticipants}/${currentEvent.maxParticipants}</div>
-            </div>
+            <p class="event-date">${currentEvent.date}</p>
+            <p class="swipe-hint">Tap for details • Swipe to browse</p>
           </div>
-        </div>
-        <div class="swipe-actions">
-          <button class="swipe-btn swipe-btn-register" onclick="event.stopPropagation(); app.swipeRegister()">✓ Register</button>
         </div>
       </div>
     `;
@@ -391,14 +396,8 @@ class EventHubApp {
     this.render();
   }
 
-  swipeRegister() {
-    const availableEvents = this.events.filter(e => !this.registeredEvents.has(e.id));
-    const event = availableEvents[this.currentEventIndex];
-    if (event) {
-      this.toggleRegister(event.id);
-      this.currentEventIndex = 0;
-      this.render();
-    }
+  toggleFilter() {
+    alert('Filter feature coming soon!');
   }
 
   renderRegisteredTab() {
