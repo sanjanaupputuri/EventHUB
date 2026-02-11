@@ -310,6 +310,11 @@ class EventHubApp {
     setTimeout(() => this.initSwipe(), 0);
     
     return `
+      <div class="search-filter-bar">
+        <input type="text" class="search-input" placeholder="Search events..." id="searchInput">
+        <button class="filter-btn" onclick="app.toggleFilter()">🔍</button>
+      </div>
+      
       <div class="swipe-container">
         <div class="swipe-card" id="swipeCard" onclick="app.showEventDetails(${JSON.stringify(currentEvent).replace(/"/g, '&quot;')})">
           <img src="${currentEvent.imageUrl}" alt="${currentEvent.title}" class="event-image">
@@ -324,9 +329,7 @@ class EventHubApp {
           </div>
         </div>
         <div class="swipe-actions">
-          <button class="swipe-btn swipe-btn-prev" onclick="event.stopPropagation(); app.swipeLeft()">←</button>
-          <button class="swipe-btn swipe-btn-register" onclick="event.stopPropagation(); app.swipeRegister()">✓</button>
-          <button class="swipe-btn swipe-btn-next" onclick="event.stopPropagation(); app.swipeRight()">→</button>
+          <button class="swipe-btn swipe-btn-register" onclick="event.stopPropagation(); app.swipeRegister()">✓ Register</button>
         </div>
       </div>
     `;
