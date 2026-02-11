@@ -706,7 +706,7 @@ class EventHubApp {
           <button class="icon-btn" onclick="app.showThemeMenu = true; app.render()">
             ${this.theme === 'light' ? '☀️' : this.theme === 'dark' ? '🌙' : '📱'}
           </button>
-          <button class="icon-btn" onclick="app.logout()">🚪</button>
+          <button class="icon-btn" onclick="app.logout()">Logout</button>
         </div>
       </div>
       
@@ -715,17 +715,14 @@ class EventHubApp {
       <nav class="bottom-nav">
         <button class="nav-item ${this.currentTab === 'discover' ? 'active' : ''}" 
                 onclick="app.switchTab('discover')">
-          <span class="nav-icon">🏠</span>
           Home
         </button>
         <button class="nav-item ${this.currentTab === 'registered' ? 'active' : ''}" 
                 onclick="app.switchTab('registered')">
-          <span class="nav-icon">📅</span>
           My Events
         </button>
         <button class="nav-item ${this.currentTab === 'profile' ? 'active' : ''}" 
                 onclick="app.switchTab('profile')">
-          <span class="nav-icon">👤</span>
           Profile
         </button>
       </nav>
