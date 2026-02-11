@@ -7,6 +7,9 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// Google Sign-In Configuration
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'; // Replace with your actual client ID
+
 // App State Management
 class EventHubApp {
   constructor() {
@@ -21,13 +24,64 @@ class EventHubApp {
     this.currentEventIndex = 0;
     this.showThemeMenu = false;
     this.selectedEvent = null;
+    this.googleInitialized = false;
     
     this.init();
   }
 
   init() {
     this.applyTheme();
+    this.initGoogleSignIn();
     this.showSplash();
+  }
+
+  initGoogleSignIn() {
+    if (typeof google !== 'undefined') {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (response) => this.handleGoogleSignIn(response)
+      });
+      this.googleInitialized = true;
+    } else {
+      setTimeout(() => this.initGoogleSignIn(), 100);
+    }
+  }
+
+  handleGoogleSignIn(response) {
+    try {
+      const payload = JSON.parse(atob(response.credential.split('.')[1]));
+      const email = payload.email;
+      
+      // Validate college email (customize domain as needed)
+      if (!email.endsWith('@yourdomain.edu')) {
+        alert('Please use your college email address');
+        return;
+      }
+      
+      const rollNumber = email.split('@')[0];
+      this.user = {
+        id: payload.sub,
+        name: payload.name || rollNumber,
+        email: email,
+        collegeId: rollNumber
+      };
+      localStorage.setItem('user', JSON.stringify(this.user));
+      this.showMain();
+    } catch (error) {
+      console.error('Google Sign-In error:', error);
+      alert('Sign-in failed. Please try again.');
+    }
+  }
+
+  renderGoogleButton() {
+    setTimeout(() => {
+      if (this.googleInitialized) {
+        google.accounts.id.renderButton(
+          document.getElementById('googleSignInButton'),
+          { theme: this.theme === 'dark' ? 'filled_black' : 'outline', size: 'large', width: 280 }
+        );
+      }
+    }, 0);
   }
 
   applyTheme() {
@@ -207,47 +261,36 @@ class EventHubApp {
   }
 
   renderLogin() {
+    setTimeout(() => this.renderGoogleButton(), 0);
     return `
       <div class="auth-container">
         <h1 class="auth-title">Welcome Back</h1>
-        <p class="auth-subtitle">Sign in to continue</p>
+        <p class="auth-subtitle">Sign in with your college email</p>
         
-        <form onsubmit="event.preventDefault(); app.handleLogin(this.email.value, this.password.value);">
-          <div class="input-group">
-            <label class="input-label">Email</label>
-            <input type="email" name="email" class="input-field" placeholder="Enter your email" required>
-          </div>
-          
-          <div class="input-group">
-            <label class="input-label">Password</label>
-            <input type="password" name="password" class="input-field" placeholder="Enter your password" required>
-          </div>
-          
-          <button type="submit" class="btn btn-primary">Sign In</button>
-        </form>
+        <div id="googleSignInButton" style="display: flex; justify-content: center; margin: 2rem 0;"></div>
         
-        <div style="text-align: center; margin-top: 1.5rem;">
-          <button class="btn-text" onclick="app.showSignup()">
-            Don't have an account? Sign Up
-          </button>
+        <div style="text-align: center; color: var(--text-secondary); font-size: 0.875rem; margin-top: 1rem;">
+          Use your college email to sign in
         </div>
       </div>
     `;
   }
 
   renderSignup() {
+    setTimeout(() => this.renderGoogleButton(), 0);
     return `
       <div class="auth-container">
         <h1 class="auth-title">Create Account</h1>
-        <p class="auth-subtitle">Join UNIS today</p>
+        <p class="auth-subtitle">Sign up with your college email</p>
         
-        <form onsubmit="event.preventDefault(); app.handleSignup(this.name.value, this.email.value, this.password.value);">
-          <div class="input-group">
-            <label class="input-label">Full Name</label>
-            <input type="text" name="name" class="input-field" placeholder="Enter your name" required>
-          </div>
-          
-          <div class="input-group">
+        <div id="googleSignInButton" style="display: flex; justify-content: center; margin: 2rem 0;"></div>
+        
+        <div style="text-align: center; color: var(--text-secondary); font-size: 0.875rem; margin-top: 1rem;">
+          Use your college email to create an account
+        </div>
+      </div>
+    `;
+  }
             <label class="input-label">Email</label>
             <input type="email" name="email" class="input-field" placeholder="Enter your email" required>
           </div>
@@ -319,12 +362,87 @@ class EventHubApp {
         <div class="empty-state">
           <div class="empty-icon">🎉</div>
           <h3 class="empty-title">All Caught Up!</h3>
-          <p class="empty-message">You've seen all available events</p>
+          <p class="empty-message">You've registered for all events</p>
         </div>
       `;
     }
     
-    return availableEvents.map(e => this.renderEventCard(e)).join('');
+    this.currentEventIndex = this.currentEventIndex % availableEvents.length;
+    const currentEvent = availableEvents[this.currentEventIndex];
+    
+    setTimeout(() => this.initSwipe(), 0);
+    
+    return `
+      <div class="swipe-container">
+        <div class="swipe-card" id="swipeCard" onclick="app.showEventDetails(${JSON.stringify(currentEvent).replace(/"/g, '&quot;')})">
+          <img src="${currentEvent.imageUrl}" alt="${currentEvent.title}" class="event-image">
+          <div class="swipe-card-content">
+            <h2 class="event-title">${currentEvent.title}</h2>
+            <span class="category-badge">${currentEvent.category}</span>
+            <div class="event-meta" style="margin-top: 1rem;">
+              <div class="event-meta-item">📅 ${currentEvent.date}</div>
+              <div class="event-meta-item">🕐 ${currentEvent.time}</div>
+              <div class="event-meta-item">👥 ${currentEvent.currentParticipants}/${currentEvent.maxParticipants}</div>
+            </div>
+          </div>
+        </div>
+        <div class="swipe-actions">
+          <button class="swipe-btn swipe-btn-prev" onclick="event.stopPropagation(); app.swipeLeft()">←</button>
+          <button class="swipe-btn swipe-btn-register" onclick="event.stopPropagation(); app.swipeRegister()">✓</button>
+          <button class="swipe-btn swipe-btn-next" onclick="event.stopPropagation(); app.swipeRight()">→</button>
+        </div>
+      </div>
+    `;
+  }
+
+  initSwipe() {
+    const card = document.getElementById('swipeCard');
+    if (!card) return;
+    
+    let startX = 0, currentX = 0, isDragging = false;
+    
+    card.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+      isDragging = true;
+    });
+    
+    card.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      currentX = e.touches[0].clientX - startX;
+      card.style.transform = `translateX(${currentX}px) rotate(${currentX * 0.05}deg)`;
+    });
+    
+    card.addEventListener('touchend', () => {
+      if (Math.abs(currentX) > 100) {
+        currentX > 0 ? this.swipeRight() : this.swipeLeft();
+      } else {
+        card.style.transform = '';
+      }
+      isDragging = false;
+      currentX = 0;
+    });
+  }
+
+  swipeLeft() {
+    const availableEvents = this.events.filter(e => !this.registeredEvents.has(e.id));
+    this.currentEventIndex = (this.currentEventIndex - 1 + availableEvents.length) % availableEvents.length;
+    this.render();
+  }
+
+  swipeRight() {
+    const availableEvents = this.events.filter(e => !this.registeredEvents.has(e.id));
+    this.currentEventIndex = (this.currentEventIndex + 1) % availableEvents.length;
+    this.render();
+  }
+
+  swipeRegister() {
+    const availableEvents = this.events.filter(e => !this.registeredEvents.has(e.id));
+    const event = availableEvents[this.currentEventIndex];
+    if (event) {
+      this.toggleRegister(event.id);
+      this.currentEventIndex = 0;
+      this.render();
+    }
   }
 
   renderRegisteredTab() {
