@@ -522,20 +522,39 @@ class EventHubApp {
     return registered.map(e => this.renderEventCard(e)).join('');
   }
 
-  renderBookmarksTab() {
-    const bookmarked = this.events.filter(e => this.bookmarkedEvents.has(e.id));
-    
-    if (bookmarked.length === 0) {
-      return `
-        <div class="empty-state">
-          <div class="empty-icon">⭐</div>
-          <h3 class="empty-title">No Bookmarks</h3>
-          <p class="empty-message">Bookmark events to save them for later</p>
+  renderProfileTab() {
+    return `
+      <div style="padding: 1rem;">
+        <h2 style="margin-bottom: 1.5rem;">Profile</h2>
+        
+        <div class="profile-card">
+          <div class="profile-avatar">${this.user.name.charAt(0).toUpperCase()}</div>
+          <h3>${this.user.name}</h3>
+          <p style="color: var(--text-secondary);">${this.user.email}</p>
         </div>
-      `;
-    }
-    
-    return bookmarked.map(e => this.renderEventCard(e)).join('');
+        
+        <div class="settings-card">
+          <h3 style="margin-bottom: 1rem;">Account Information</h3>
+          <div class="info-row">
+            <span>📧 Email</span>
+            <span>${this.user.email}</span>
+          </div>
+          <div class="info-row">
+            <span>🎓 College ID</span>
+            <span>${this.user.collegeId}</span>
+          </div>
+        </div>
+        
+        <div class="settings-card">
+          <h3 style="margin-bottom: 1rem;">Notifications</h3>
+          <label class="toggle-row">
+            <span>Event Reminders</span>
+            <input type="checkbox" ${this.notificationsEnabled ? 'checked' : ''} 
+                   onchange="app.toggleNotifications(this.checked)">
+          </label>
+        </div>
+      </div>
+    `;
   }
 
   renderThemeMenu() {
@@ -675,8 +694,8 @@ class EventHubApp {
       case 'registered':
         content = this.renderRegisteredTab();
         break;
-      case 'bookmarks':
-        content = this.renderBookmarksTab();
+      case 'profile':
+        content = this.renderProfileTab();
         break;
     }
     
@@ -687,7 +706,7 @@ class EventHubApp {
           <button class="icon-btn" onclick="app.showThemeMenu = true; app.render()">
             ${this.theme === 'light' ? '☀️' : this.theme === 'dark' ? '🌙' : '📱'}
           </button>
-          <button class="icon-btn" onclick="app.showSettings()">⚙️</button>
+          <button class="icon-btn" onclick="app.logout()">🚪</button>
         </div>
       </div>
       
@@ -696,18 +715,18 @@ class EventHubApp {
       <nav class="bottom-nav">
         <button class="nav-item ${this.currentTab === 'discover' ? 'active' : ''}" 
                 onclick="app.switchTab('discover')">
-          <span class="nav-icon">🔍</span>
-          Discover
+          <span class="nav-icon">🏠</span>
+          Home
         </button>
         <button class="nav-item ${this.currentTab === 'registered' ? 'active' : ''}" 
                 onclick="app.switchTab('registered')">
-          <span class="nav-icon">✓</span>
-          Registered
+          <span class="nav-icon">📅</span>
+          My Events
         </button>
-        <button class="nav-item ${this.currentTab === 'bookmarks' ? 'active' : ''}" 
-                onclick="app.switchTab('bookmarks')">
-          <span class="nav-icon">★</span>
-          Bookmarks
+        <button class="nav-item ${this.currentTab === 'profile' ? 'active' : ''}" 
+                onclick="app.switchTab('profile')">
+          <span class="nav-icon">👤</span>
+          Profile
         </button>
       </nav>
       
