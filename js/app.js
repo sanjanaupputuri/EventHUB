@@ -248,26 +248,6 @@ class EventHubApp {
       </div>
     `;
   }
-            <label class="input-label">Email</label>
-            <input type="email" name="email" class="input-field" placeholder="Enter your email" required>
-          </div>
-          
-          <div class="input-group">
-            <label class="input-label">Password</label>
-            <input type="password" name="password" class="input-field" placeholder="Create a password" required>
-          </div>
-          
-          <button type="submit" class="btn btn-primary">Sign Up</button>
-        </form>
-        
-        <div style="text-align: center; margin-top: 1.5rem;">
-          <button class="btn-text" onclick="app.showLogin()">
-            Already have an account? Sign In
-          </button>
-        </div>
-      </div>
-    `;
-  }
 
   renderEventCard(event, showActions = true) {
     const isRegistered = this.registeredEvents.has(event.id);
