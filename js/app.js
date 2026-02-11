@@ -21,7 +21,6 @@ class EventHubApp {
     this.currentEventIndex = 0;
     this.showThemeMenu = false;
     this.selectedEvent = null;
-    this.googleInitialized = false;
     
     this.init();
   }
