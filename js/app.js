@@ -21,6 +21,9 @@ class EventHubApp {
     this.currentEventIndex = 0;
     this.showThemeMenu = false;
     this.selectedEvent = null;
+    this.showFilterSheet = false;
+    this.selectedCategories = new Set();
+    this.searchQuery = '';
     
     this.init();
   }
@@ -292,14 +295,22 @@ class EventHubApp {
   }
 
   renderDiscoverTab() {
-    const availableEvents = this.events.filter(e => !this.registeredEvents.has(e.id));
+    const availableEvents = this.events.filter(e => {
+      const notRegistered = !this.registeredEvents.has(e.id);
+      const matchesSearch = !this.searchQuery || 
+        e.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        e.description.toLowerCase().includes(this.searchQuery.toLowerCase());
+      const matchesCategory = this.selectedCategories.size === 0 || 
+        this.selectedCategories.has(e.category);
+      return notRegistered && matchesSearch && matchesCategory;
+    });
     
     if (availableEvents.length === 0) {
       return `
         <div class="empty-state">
           <div class="empty-icon">🎉</div>
-          <h3 class="empty-title">All Caught Up!</h3>
-          <p class="empty-message">You've registered for all events</p>
+          <h3 class="empty-title">${this.searchQuery || this.selectedCategories.size > 0 ? 'No matching events' : 'All Caught Up!'}</h3>
+          <p class="empty-message">${this.searchQuery || this.selectedCategories.size > 0 ? 'Try adjusting your filters' : 'You\'ve registered for all events'}</p>
         </div>
       `;
     }
@@ -320,20 +331,32 @@ class EventHubApp {
     }[currentEvent.category] || '📅';
     
     const categoryColor = {
-      'Technical': 'var(--primary)',
-      'Cultural': 'var(--secondary)',
+      'Technical': '#BB86FC',
+      'Cultural': '#03DAC6',
       'Sports': '#FF6B6B',
       'Workshop': '#4ECDC4',
       'Business': '#FFD93D',
       'Gaming': '#A8E6CF',
       'Social': '#FF8B94'
-    }[currentEvent.category] || 'var(--primary)';
+    }[currentEvent.category] || '#BB86FC';
+    
+    const filterChips = this.selectedCategories.size > 0 ? `
+      <div class="filter-chips">
+        ${Array.from(this.selectedCategories).map(cat => `
+          <div class="filter-chip" onclick="app.removeCategory('${cat}')">
+            ${cat} <span>✕</span>
+          </div>
+        `).join('')}
+      </div>
+    ` : '';
     
     return `
       <div class="search-filter-bar">
-        <input type="text" class="search-input" placeholder="Search events..." id="searchInput">
-        <button class="filter-btn" onclick="app.toggleFilter()">🔍</button>
+        <input type="text" class="search-input" placeholder="Search events..." id="searchInput" value="${this.searchQuery}" oninput="app.handleSearch(this.value)">
+        <button class="filter-btn ${this.selectedCategories.size > 0 ? 'active' : ''}" onclick="app.toggleFilter()">🔍</button>
       </div>
+      
+      ${filterChips}
       
       <div class="swipe-container">
         <div class="swipe-card" id="swipeCard" onclick="app.showEventDetails(${JSON.stringify(currentEvent).replace(/"/g, '&quot;')})">
@@ -347,7 +370,63 @@ class EventHubApp {
           </div>
         </div>
       </div>
+      
+      ${this.showFilterSheet ? this.renderFilterSheet() : ''}
     `;
+  }
+
+  renderFilterSheet() {
+    const categories = ['Technical', 'Cultural', 'Sports', 'Workshop', 'Business', 'Gaming', 'Social'];
+    return `
+      <div class="modal-overlay" onclick="app.toggleFilter()">
+        <div class="filter-sheet" onclick="event.stopPropagation()">
+          <h3>Filter by Category</h3>
+          ${categories.map(cat => `
+            <label class="filter-option">
+              <input type="checkbox" ${this.selectedCategories.has(cat) ? 'checked' : ''} onchange="app.toggleCategory('${cat}')">
+              <span>${cat}</span>
+            </label>
+          `).join('')}
+          <div class="filter-actions">
+            <button class="btn btn-outline" onclick="app.clearFilters()">Clear All</button>
+            <button class="btn btn-primary" onclick="app.toggleFilter()">Apply</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  handleSearch(query) {
+    this.searchQuery = query;
+    this.currentEventIndex = 0;
+    this.render();
+  }
+
+  toggleCategory(category) {
+    if (this.selectedCategories.has(category)) {
+      this.selectedCategories.delete(category);
+    } else {
+      this.selectedCategories.add(category);
+    }
+    this.currentEventIndex = 0;
+    this.render();
+  }
+
+  removeCategory(category) {
+    this.selectedCategories.delete(category);
+    this.currentEventIndex = 0;
+    this.render();
+  }
+
+  clearFilters() {
+    this.selectedCategories.clear();
+    this.currentEventIndex = 0;
+    this.render();
+  }
+
+  toggleFilter() {
+    this.showFilterSheet = !this.showFilterSheet;
+    this.render();
   }
 
   initSwipe() {
@@ -395,19 +474,36 @@ class EventHubApp {
   }
 
   swipeLeft() {
-    const availableEvents = this.events.filter(e => !this.registeredEvents.has(e.id));
+    const availableEvents = this.events.filter(e => {
+      const notRegistered = !this.registeredEvents.has(e.id);
+      const matchesSearch = !this.searchQuery || 
+        e.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        e.description.toLowerCase().includes(this.searchQuery.toLowerCase());
+      const matchesCategory = this.selectedCategories.size === 0 || 
+        this.selectedCategories.has(e.category);
+      return notRegistered && matchesSearch && matchesCategory;
+    });
     this.currentEventIndex = (this.currentEventIndex - 1 + availableEvents.length) % availableEvents.length;
     this.render();
   }
 
   swipeRight() {
-    const availableEvents = this.events.filter(e => !this.registeredEvents.has(e.id));
+    const availableEvents = this.events.filter(e => {
+      const notRegistered = !this.registeredEvents.has(e.id);
+      const matchesSearch = !this.searchQuery || 
+        e.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        e.description.toLowerCase().includes(this.searchQuery.toLowerCase());
+      const matchesCategory = this.selectedCategories.size === 0 || 
+        this.selectedCategories.has(e.category);
+      return notRegistered && matchesSearch && matchesCategory;
+    });
     this.currentEventIndex = (this.currentEventIndex + 1) % availableEvents.length;
     this.render();
   }
 
   toggleFilter() {
-    alert('Filter feature coming soon!');
+    this.showFilterSheet = !this.showFilterSheet;
+    this.render();
   }
 
   renderRegisteredTab() {
