@@ -289,14 +289,14 @@ body.dark-theme {
 .search-filter-bar {
   display: flex;
   gap: 0.5rem;
-  padding: 0 1rem 1rem 1rem;
+  padding: 0 1rem 0.5rem 1rem;
   width: 100%;
 }
 
 .search-input {
   flex: 1;
   padding: 0.75rem 1rem;
-  border: 1px solid var(--surface-variant);
+  border: 2px solid var(--surface-variant);
   border-radius: 12px;
   background: var(--surface);
   color: var(--text-primary);
@@ -306,7 +306,7 @@ body.dark-theme {
 .filter-btn {
   width: 48px;
   height: 48px;
-  border: 1px solid var(--surface-variant);
+  border: 2px solid var(--surface-variant);
   border-radius: 12px;
   background: var(--surface);
   font-size: 1.25rem;
@@ -322,7 +322,7 @@ body.dark-theme {
 .filter-chips {
   display: flex;
   gap: 0.5rem;
-  padding: 0 1rem 0.5rem 1rem;
+  padding: 0 1rem 0.25rem 1rem;
   flex-wrap: wrap;
 }
 
@@ -357,6 +357,10 @@ body.dark-theme {
   width: 100%;
   max-height: 70vh;
   overflow-y: auto;
+}
+
+.dark-theme .filter-sheet {
+  background: var(--background);
 }
 
 .filter-sheet h3 {
