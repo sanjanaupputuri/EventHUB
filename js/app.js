@@ -344,20 +344,36 @@ class EventHubApp {
     card.addEventListener('touchstart', (e) => {
       startX = e.touches[0].clientX;
       isDragging = true;
+      card.style.transition = 'none';
     });
     
     card.addEventListener('touchmove', (e) => {
       if (!isDragging) return;
       currentX = e.touches[0].clientX - startX;
-      card.style.transform = `translateX(${currentX}px) rotate(${currentX * 0.05}deg)`;
+      const rotation = currentX * 0.05;
+      card.style.transform = `translateX(${currentX}px) rotate(${rotation}deg)`;
     });
     
     card.addEventListener('touchend', () => {
-      if (Math.abs(currentX) > 100) {
-        currentX > 0 ? this.swipeRight() : this.swipeLeft();
+      card.style.transition = 'transform 0.3s ease';
+      const threshold = window.innerWidth * 0.3;
+      
+      if (currentX > threshold) {
+        card.style.transform = `translateX(${window.innerWidth}px) rotate(20deg)`;
+        setTimeout(() => {
+          this.swipeRight();
+          card.style.transform = '';
+        }, 300);
+      } else if (currentX < -threshold) {
+        card.style.transform = `translateX(-${window.innerWidth}px) rotate(-20deg)`;
+        setTimeout(() => {
+          this.swipeLeft();
+          card.style.transform = '';
+        }, 300);
       } else {
         card.style.transform = '';
       }
+      
       isDragging = false;
       currentX = 0;
     });
