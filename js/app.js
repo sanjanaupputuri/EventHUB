@@ -113,10 +113,14 @@ class EventHubApp {
     }
   }
 
-  handleLogout() {
+  logout() {
     this.user = null;
     localStorage.removeItem('user');
     this.showLogin();
+  }
+
+  handleLogout() {
+    this.logout();
   }
 
   toggleRegister(eventId) {
@@ -706,7 +710,7 @@ class EventHubApp {
           <button class="icon-btn" onclick="app.showThemeMenu = true; app.render()">
             ${this.theme === 'light' ? '☀️' : this.theme === 'dark' ? '🌙' : '📱'}
           </button>
-          <button class="icon-btn" onclick="app.logout()">Logout</button>
+          <button class="icon-btn" onclick="app.logout()">→</button>
         </div>
       </div>
       
